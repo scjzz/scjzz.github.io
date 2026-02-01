@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="LinkClip - 剪贴板历史与局域网传输桌面工具，支持文本/图片历史、搜索、标签、收藏、批量操作与 PC↔手机互传">
+  <title>LinkClip - 剪贴板历史 + 局域网传输</title>
+  <style>
+    :root {
+      --bg: #0a0a0c;
+      --bg-card: #141418;
+      --bg-elevated: #1a1a20;
+      --text: #f4f4f5;
+      --text-muted: #71717a;
+      --primary: #3b82f6;
+      --primary-hover: #2563eb;
+      --accent: #22c55e;
+      --border: #27272a;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    .bg-grid {
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(59, 130, 246, 0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(59, 130, 246, 0.04) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .bg-glow {
+      position: fixed;
+      width: 500px;
+      height: 500px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(59, 130, 246, 0.12) 0%, transparent 65%);
+      top: -150px;
+      right: -150px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      padding: 0.875rem 1.5rem;
+      background: rgba(10, 10, 12, 0.85);
+      backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .nav-inner {
+      max-width: 1100px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .logo {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .logo-icon {
+      width: 32px;
+      height: 32px;
+      background: linear-gradient(135deg, var(--primary), #8b5cf6);
+      border-radius: 8px;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 1.75rem;
+    }
+
+    .nav-links a {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 0.9375rem;
+      font-weight: 500;
+      transition: color 0.2s;
+    }
+
+    .nav-links a:hover {
+      color: var(--primary);
+    }
+
+    .hero {
+      position: relative;
+      z-index: 1;
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 5rem 1.5rem 4rem;
+      text-align: center;
+    }
+
+    .hero h1 {
+      font-size: clamp(2rem, 4.5vw, 3rem);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-bottom: 0.875rem;
+      background: linear-gradient(135deg, #fff 0%, #a1a1aa 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero .tagline {
+      font-size: 1.125rem;
+      color: var(--text-muted);
+      max-width: 520px;
+      margin: 0 auto 2rem;
+    }
+
+    .hero-buttons {
+      display: flex;
+      gap: 0.75rem;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1.25rem;
+      font-size: 0.9375rem;
+      font-weight: 600;
+      border-radius: 10px;
+      text-decoration: none;
+      transition: all 0.2s;
+      cursor: pointer;
+      border: none;
+      font-family: inherit;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: var(--primary-hover);
+      transform: translateY(-1px);
+    }
+
+    .btn-secondary {
+      background: var(--bg-elevated);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+
+    .btn-secondary:hover {
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+
+    .section {
+      position: relative;
+      z-index: 1;
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 3.5rem 1.5rem;
+    }
+
+    .section-title {
+      text-align: center;
+      font-size: 1.75rem;
+      font-weight: 700;
+      margin-bottom: 2.5rem;
+      color: var(--text);
+    }
+
+    .features {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 1.25rem;
+    }
+
+    .feature-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 1.25rem;
+      transition: all 0.2s;
+    }
+
+    .feature-card:hover {
+      border-color: rgba(59, 130, 246, 0.5);
+      transform: translateY(-2px);
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.25);
+    }
+
+    .feature-icon {
+      width: 44px;
+      height: 44px;
+      background: linear-gradient(135deg, rgba(59, 130, 246, 0.18), rgba(139, 92, 246, 0.18));
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 0.875rem;
+      font-size: 1.25rem;
+    }
+
+    .feature-card h3 {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 0.375rem;
+    }
+
+    .feature-card p {
+      color: var(--text-muted);
+      font-size: 0.875rem;
+      line-height: 1.5;
+    }
+
+    .download-section {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2.5rem;
+      text-align: center;
+      margin-top: 1rem;
+    }
+
+    .download-section h3 {
+      font-size: 1.25rem;
+      margin-bottom: 0.375rem;
+    }
+
+    .download-section p {
+      color: var(--text-muted);
+      font-size: 0.875rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .download-options {
+      display: flex;
+      gap: 0.75rem;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .tech-stack {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 0.75rem;
+      margin-top: 1.5rem;
+    }
+
+    .tech-tag {
+      padding: 0.4rem 0.875rem;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 0.8125rem;
+      color: var(--text-muted);
+    }
+
+    footer {
+      position: relative;
+      z-index: 1;
+      text-align: center;
+      padding: 2.5rem 1.5rem;
+      border-top: 1px solid var(--border);
+      color: var(--text-muted);
+      font-size: 0.8125rem;
+    }
+
+    footer a {
+      color: var(--primary);
+      text-decoration: none;
+    }
+
+    footer a:hover {
+      text-decoration: underline;
+    }
+
+    @media (max-width: 640px) {
+      .nav-links {
+        display: none;
+      }
+      .hero {
+        padding: 3.5rem 1rem 2.5rem;
+      }
+      .section {
+        padding: 2.5rem 1rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-grid"></div>
+  <div class="bg-glow"></div>
+
+  <nav>
+    <div class="nav-inner">
+      <div class="logo">
+        <div class="logo-icon"></div>
+        LinkClip
+      </div>
+      <div class="nav-links">
+        <a href="#features">功能</a>
+        <a href="#download">下载</a>
+        <a href="#tech">技术</a>
+      </div>
+    </div>
+  </nav>
+
+  <section class="hero">
+    <h1>剪贴板历史 + 局域网传输</h1>
+    <p class="tagline">一款桌面小工具：管理文本与图片剪贴板历史，支持 PC 与手机在同一 WiFi 下互传文件。</p>
+    <div class="hero-buttons">
+      <a href="#download" class="btn btn-primary">下载 Windows 版</a>
+      <a href="https://github.com" class="btn btn-secondary" target="_blank" rel="noopener">源码</a>
+    </div>
+  </section>
+
+  <section class="section" id="features">
+    <h2 class="section-title">功能概览</h2>
+    <div class="features">
+      <div class="feature-card">
+        <div class="feature-icon">📋</div>
+        <h3>剪贴板历史</h3>
+        <p>自动保存文本与图片，支持搜索、标签、收藏、置顶；相同内容去重，新复制时更新并置顶。</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">☑️</div>
+        <h3>多选与批量</h3>
+        <p>多选模式下批量删除、取消收藏/置顶、加标签、去标签，一次处理多条记录。</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">⌨️</div>
+        <h3>快捷键唤起</h3>
+        <p>自定义组合键（如 Ctrl+Shift+S）快速打开剪贴板窗口，一键捕获当前剪贴板内容。</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📁</div>
+        <h3>存储与备份</h3>
+        <p>可选将数据存到指定 JSON 文件，迁移时自动清理旧文件；支持导出/导入 JSON 备份。</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🧹</div>
+        <h3>自动/手动清理</h3>
+        <p>可设清理天数（1–365）自动清理过期内容；关闭自动清理时仍可一键手动清理，收藏与置顶项保留。</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📱</div>
+        <h3>局域网传输</h3>
+        <p>PC 与手机同一 WiFi 下，扫码即可互传；支持拖拽上传、自定义接收目录，手机输入内容可同步到 PC 剪贴板。</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">⚙️</div>
+        <h3>外观与体验</h3>
+        <p>浅色/深色/跟随系统主题；窗口可置顶；可选开机自启；最小化到系统托盘。</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="download">
+    <h2 class="section-title">下载</h2>
+    <div class="download-section">
+      <h3>Windows</h3>
+      <p>支持安装版（NSIS）与便携版，适用于 Windows 10 及以上</p>
+      <div class="download-options">
+        <a href="#" class="btn btn-primary">安装版 (.exe)</a>
+        <a href="#" class="btn btn-secondary">便携版 (.exe)</a>
+      </div>
+      <p style="margin-top: 1rem; font-size: 0.8125rem; color: var(--text-muted);">下载链接即将提供，可先通过源码自行打包。</p>
+    </div>
+  </section>
+
+  <section class="section" id="tech">
+    <h2 class="section-title">技术栈</h2>
+    <div class="tech-stack">
+      <span class="tech-tag">React 19</span>
+      <span class="tech-tag">TypeScript</span>
+      <span class="tech-tag">Vite 6</span>
+      <span class="tech-tag">Electron 33</span>
+      <span class="tech-tag">Tailwind CSS 4</span>
+      <span class="tech-tag">Radix UI</span>
+    </div>
+  </section>
+
+  <footer>
+    <p>© 2025 LinkClip · 剪贴板历史与局域网传输桌面工具</p>
+    <p style="margin-top: 0.5rem;">
+      <a href="https://flyingstudio.feishu.cn/share/base/form/shrcnv6IXHdAkxHmUwN2U1hRm4v" target="_blank" rel="noopener">问题反馈</a>
+    </p>
+  </footer>
+</body>
+</html>
